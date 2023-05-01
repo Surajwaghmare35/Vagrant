@@ -1,0 +1,43 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/ubuntu-22.04"
+  config.vm.box_check_update = true
+
+  config.vm.provision "shell", inline: <<-SHELL
+    sudo apt-get update;
+    sudo apt-get install zsh git bash-completion -y;
+    git clone https://github.com/Surajwaghmare35/k8s-bootstrap.git
+
+    # Docker & K8s setup on both vm
+    #source /home/vagrant/k8s-bootstrap/docker-setup.sh
+    #source /home/vagrant/k8s-bootstrap/kubeadm-k8s-setup.sh
+  SHELL
+
+ # config.vm.provision "shell",
+ #   inline: "source /home/vagrant/k8s-bootstrap/docker-setup.sh"
+
+  config.trigger.after :up,
+    name: "do Vagrant ssh vm , execute below to set zsh & run: sudo apt-get upgrade -y",
+    info: 'sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"'
+
+  # Global Libvirt provider configuration
+  config.vm.provider :libvirt do |libvirt|
+    libvirt.memory = "2048"
+    libvirt.cpus = 2
+    libvirt.storage :file, size: '20G'
+    libvirt.driver = "kvm"
+  end
+
+  # Configuration for VM 1
+  config.vm.define "vm1", primary: true do |vm1_config|
+    vm1_config.vm.hostname = "master"
+  end
+
+  # Configuration for VM 2
+  config.vm.define "vm2", autostart: false do |vm2_config|
+    vm2_config.vm.hostname = "worker"
+  end
+end
+
